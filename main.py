@@ -4,7 +4,6 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiohttp import web
 
-# Environment Variables
 API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
@@ -17,9 +16,8 @@ routes = web.RouteTableDef()
 
 @routes.get("/")
 async def root_route_handler(request):
-    return web.json_response({"status": "Bot is Running Successfully!", "version": "2.0-Pro"})
+    return web.json_response({"status": "Bot is Running!", "version": "3.0-Turbo"})
 
-# High-Speed Range Header & Streaming Handler (Seekable Support)
 @routes.get("/stream/{msg_id}")
 @routes.get("/download/{msg_id}")
 async def media_stream_handler(request):
@@ -32,21 +30,23 @@ async def media_stream_handler(request):
             
         media = message.document or message.video or message.audio
         file_size = media.file_size
-        mime_type = media.mime_type or "application/octet-stream"
-        file_name = media.file_name or "file"
+        mime_type = media.mime_type or "video/mp4"
+        file_name = media.file_name or "video.mp4"
         
-        # Determine if request is direct download or inline stream
         is_download = "/download/" in request.path
         disposition = "attachment" if is_download else "inline"
 
         range_header = request.headers.get("Range")
         
         if range_header:
-            from_bytes, until_bytes = range_header.replace("bytes=", "").split("-")
-            from_bytes = int(from_bytes)
-            until_bytes = int(until_bytes) if until_bytes else file_size - 1
+            range_data = range_header.replace("bytes=", "").split("-")
+            from_bytes = int(range_data[0]) if range_data[0] else 0
+            until_bytes = int(range_data[1]) if range_data[1] else file_size - 1
         else:
             from_bytes = 0
+            until_bytes = file_size - 1
+
+        if until_bytes >= file_size:
             until_bytes = file_size - 1
 
         length = until_bytes - from_bytes + 1
@@ -62,7 +62,8 @@ async def media_stream_handler(request):
         response = web.StreamResponse(status=206 if range_header else 200, headers=headers)
         await response.prepare(request)
 
-        # Fast chunked streaming loop (64KB chunks)
+        # High-Speed Streaming (1MB chunks)
+        chunk_size = 1024 * 1024  # 1MB
         async for chunk in app.stream_media(message, offset=from_bytes, limit=length):
             await response.write(chunk)
 
@@ -70,22 +71,18 @@ async def media_stream_handler(request):
     except Exception as e:
         return web.Response(status=500, text=str(e))
 
-# Welcome Message for /start
 @app.on_message(filters.command("start") & filters.private)
 async def start_command(client, message):
     welcome_text = (
         f"<b>👋 হ্যালো {message.from_user.mention},</b>\n\n"
         f"আমি একটি <b>High-Speed Telegram File Streaming & Download Bot</b>।\n\n"
-        f"<b>🚀 যেভাবে কাজ করবেন:</b>\n"
-        f"যেকোনো ভিডিও, অডিও বা ফাইল আমাকে পাঠান। আমি আপনাকে সাথে সাথে "
-        f"<b>Online Stream Link</b> এবং <b>Direct Download Link</b> তৈরি করে দেব!"
+        f"<b>🚀 নিয়ম:</b>\n"
+        f"যেকোনো ভিডিও বা ফাইল আমাকে পাঠান, আমি দ্রুত <b>Stream</b> ও <b>Direct Download Link</b> তৈরি করে দেব!"
     )
     await message.reply_text(welcome_text, quote=True)
 
-# Media Handling Logic
 @app.on_message(filters.private & (filters.document | filters.video | filters.audio))
 async def handle_media(client, message):
-    # Copy file to private storage channel
     log_msg = await message.copy(chat_id=BIN_CHANNEL)
     
     base_url = URL.rstrip("/")
@@ -94,8 +91,8 @@ async def handle_media(client, message):
     
     reply_markup = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("▶️ Fast Stream", url=stream_link),
-            InlineKeyboardButton("📥 Direct Download", url=download_link)
+            InlineKeyboardButton("▶️ Stream Video", url=stream_link),
+            InlineKeyboardButton("📥 Fast Download", url=download_link)
         ]
     ])
     
