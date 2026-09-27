@@ -16,7 +16,7 @@ routes = web.RouteTableDef()
 
 @routes.get("/")
 async def root_route_handler(request):
-    return web.json_response({"status": "Bot is Running!", "version": "3.0-Turbo"})
+    return web.json_response({"status": "Ultra High-Speed Stream Bot Active", "version": "4.0-Max"})
 
 @routes.get("/stream/{msg_id}")
 @routes.get("/download/{msg_id}")
@@ -51,19 +51,22 @@ async def media_stream_handler(request):
 
         length = until_bytes - from_bytes + 1
 
+        # ফাস্ট লোডিং এবং ক্যাশিং হেডারস
         headers = {
             "Content-Type": mime_type,
             "Content-Range": f"bytes {from_bytes}-{until_bytes}/{file_size}",
             "Content-Length": str(length),
             "Content-Disposition": f'{disposition}; filename="{file_name}"',
             "Accept-Ranges": "bytes",
+            "Cache-Control": "public, max-age=31536000",
+            "Access-Control-Allow-Origin": "*",
+            "Connection": "keep-alive"
         }
 
         response = web.StreamResponse(status=206 if range_header else 200, headers=headers)
         await response.prepare(request)
 
-        # High-Speed Streaming (1MB chunks)
-        chunk_size = 1024 * 1024  # 1MB
+        # হাই-স্পিড মিডিয়া স্ট্রিম
         async for chunk in app.stream_media(message, offset=from_bytes, limit=length):
             await response.write(chunk)
 
@@ -75,9 +78,9 @@ async def media_stream_handler(request):
 async def start_command(client, message):
     welcome_text = (
         f"<b>👋 হ্যালো {message.from_user.mention},</b>\n\n"
-        f"আমি একটি <b>High-Speed Telegram File Streaming & Download Bot</b>।\n\n"
+        f"আমি একটি <b>Ultra Fast Telegram File Stream & Download Bot</b>!\n\n"
         f"<b>🚀 নিয়ম:</b>\n"
-        f"যেকোনো ভিডিও বা ফাইল আমাকে পাঠান, আমি দ্রুত <b>Stream</b> ও <b>Direct Download Link</b> তৈরি করে দেব!"
+        f"যেকোনো ভিডিও বা ফাইল আমাকে পাঠান, আমি সাথে সাথে <b>Stream</b> ও <b>Direct Download Link</b> তৈরি করে দেব!"
     )
     await message.reply_text(welcome_text, quote=True)
 
