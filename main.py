@@ -74,8 +74,8 @@ async def media_stream_handler(request):
 async def start_command(client, message):
     welcome_text = (
         f"<b>👋 হ্যালো {message.from_user.mention},</b>\n\n"
-        f"আমি একটি <b>High-Speed File Streaming & Download Bot</b>।\n\n"
-        f"যেকোনো ভিডিও বা ফাইল আমাকে পাঠান, আমি ডাইরেক্ট লিঙ্ক তৈরি করে দেব!"
+        f"আমি একটি <b>High-Speed File Streaming & Download Bot</b>!\n\n"
+        f"যেকোনো ভিডিও বা ফাইল আমাকে পাঠান, আমি সরাসরি লিঙ্ক তৈরি করে দেব!"
     )
     await message.reply_text(welcome_text, quote=True)
 
